@@ -1,0 +1,17 @@
+{
+  "name": "voice-scheduler-server",
+  "version": "1.0.0",
+  "description": "Audio AI deterministic scheduler",
+  "main": "server.js",
+  "scripts": {
+    "start": "node -e \"require('./reverse-sync-worker'); require('./server');\""
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "googleapis": "^140.0.1",
+    "resend": "^4.0.0",
+    "twilio": "^5.4.0"
+  }
+}
