@@ -2,6 +2,7 @@ const { reconcileDeletedCalendarEvents } = require('./reverse-sync');
 require('dotenv').config();
 
 const intervalMs = Number(process.env.REVERSE_SYNC_INTERVAL_MS || 30000);
+const startupDelayMs = 10000;
 let syncInProgress = false;
 
 async function run() {
@@ -21,7 +22,7 @@ async function run() {
   }
 }
 
-console.log('Reverse sync worker started', { intervalMs });
+console.log('Reverse sync worker started', { intervalMs, startupDelayMs });
 
-run();
+setTimeout(run, startupDelayMs);
 setInterval(run, intervalMs);

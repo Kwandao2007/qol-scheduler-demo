@@ -328,6 +328,29 @@ function getGoogleCalendarClient() {
   };
 }
 
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function shouldRetryGoogleCalendarError(error) {
+  const status = error.response?.status;
+
+  return !status || status >= 500;
+}
+
+async function retryGoogleCalendarMutation(operation) {
+  try {
+    return await operation();
+  } catch (error) {
+    if (!shouldRetryGoogleCalendarError(error)) {
+      throw error;
+    }
+
+    await wait(2000);
+    return operation();
+  }
+}
+
 function buildDateTime(date, time) {
   return `${date}T${time}:00`;
 }
@@ -734,10 +757,12 @@ async function createCalendarEvent(collected, callerPhone) {
   }
 
   try {
-    const event = await client.calendar.events.insert({
-      calendarId: client.calendarId,
-      requestBody
-    });
+    const event = await retryGoogleCalendarMutation(() =>
+      client.calendar.events.insert({
+        calendarId: client.calendarId,
+        requestBody
+      })
+    );
 
     console.log('CALENDAR EVENT CREATED:', event.data.id);
     return event.data.id;
@@ -765,11 +790,13 @@ async function updateCalendarEvent(eventId, collected, callerPhone) {
   }
 
   try {
-    const event = await client.calendar.events.update({
-      calendarId: client.calendarId,
-      eventId,
-      requestBody
-    });
+    const event = await retryGoogleCalendarMutation(() =>
+      client.calendar.events.update({
+        calendarId: client.calendarId,
+        eventId,
+        requestBody
+      })
+    );
 
     console.log('CALENDAR EVENT UPDATED:', event.data.id);
     return true;
@@ -790,10 +817,12 @@ async function deleteCalendarEvent(eventId) {
   if (!client) return;
 
   try {
-    await client.calendar.events.delete({
-      calendarId: client.calendarId,
-      eventId
-    });
+    await retryGoogleCalendarMutation(() =>
+      client.calendar.events.delete({
+        calendarId: client.calendarId,
+        eventId
+      })
+    );
 
     console.log('CALENDAR EVENT DELETED:', eventId);
   } catch (error) {
