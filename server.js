@@ -28,6 +28,52 @@ function getSupabaseServerKey() {
   return process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 }
 
+function getDefaultDemoConfig() {
+  return {
+    business_name: 'Wade and Me Barbershop',
+    owner_name: 'Wade',
+    appointment_actions: 'schedule, cancel, or reschedule an appointment'
+  };
+}
+
+async function loadDemoConfig() {
+  const defaultDemoConfig = getDefaultDemoConfig();
+  const supabaseServerKey = getSupabaseServerKey();
+
+  if (!process.env.SUPABASE_URL || !supabaseServerKey) {
+    return defaultDemoConfig;
+  }
+
+  try {
+    const response = await axios.get(
+      `${process.env.SUPABASE_URL}/rest/v1/demo_config?select=*&limit=1`,
+      {
+        headers: {
+          apikey: supabaseServerKey,
+          Authorization: `Bearer ${supabaseServerKey}`
+        }
+      }
+    );
+
+    return {
+      ...defaultDemoConfig,
+      ...(response.data?.[0] || {})
+    };
+  } catch (error) {
+    console.log('LOAD DEMO CONFIG ERROR:', error.response?.data || error.message);
+    return defaultDemoConfig;
+  }
+}
+
+function buildDemoGreeting(demoConfig) {
+  const config = {
+    ...getDefaultDemoConfig(),
+    ...(demoConfig || {})
+  };
+
+  return `Thanks for calling ${config.business_name}. I can help ${config.appointment_actions}, or take a message for ${config.owner_name}. How can I help you today?`;
+}
+
 function getSessionCallerId(req) {
   return req.body.CallSid || req.body.From || 'unknown';
 }
@@ -919,9 +965,8 @@ function buildOwnerMessageText(collected, callerPhone) {
 }
 
 app.post('/voice', async (req, res) => {
-  const twiml = gatherTwiml(
-    'Thanks for calling Wade and Me Barbershop. I can help schedule, cancel, or reschedule an appointment, or take a message for Wade. How can I help you today?'
-  );
+  const demoConfig = await loadDemoConfig();
+  const twiml = gatherTwiml(demoConfig.greeting || buildDemoGreeting(demoConfig));
 
   res.type('text/xml');
   res.send(twiml);
