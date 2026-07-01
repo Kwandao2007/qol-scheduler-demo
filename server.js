@@ -95,12 +95,17 @@ function gatherTwiml(message) {
 `;
 }
 
-function hangupTwiml(message) {
+function hangupTwiml(message, demoConfig) {
+  const config = {
+    ...getDefaultDemoConfig(),
+    ...(demoConfig || {})
+  };
   const safeMessage = escapeXml(message);
+  const safeBusinessName = escapeXml(config.business_name);
 
   return `
 <Response>
-  <Say voice="Polly.Joanna">${safeMessage} Thanks for calling Wade and Me Barbershop.</Say>
+  <Say voice="Polly.Joanna">${safeMessage} Thanks for calling ${safeBusinessName}.</Say>
   <Hangup/>
 </Response>
 `;
@@ -1068,8 +1073,12 @@ app.post('/gather', async (req, res) => {
       await sendSms(callerPhone, customerText);
     }
 
+    const demoConfig = isTerminalState(currentState)
+      ? await loadDemoConfig()
+      : null;
+
     const twiml = isTerminalState(currentState)
-      ? hangupTwiml(aiResponse)
+      ? hangupTwiml(aiResponse, demoConfig)
       : gatherTwiml(aiResponse);
 
     res.type('text/xml');
@@ -1077,8 +1086,10 @@ app.post('/gather', async (req, res) => {
   } catch (error) {
     console.log('ERROR:', error.response?.data || error.message);
 
+    const demoConfig = await loadDemoConfig();
     const twiml = hangupTwiml(
-      'Sorry, I had trouble checking the schedule. Please try again.'
+      'Sorry, I had trouble checking the schedule. Please try again.',
+      demoConfig
     );
 
     res.type('text/xml');
