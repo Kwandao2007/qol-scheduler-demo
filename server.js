@@ -550,30 +550,30 @@ function buildFullDayBlockMessage(blockInfo, fallbackMessage) {
   if (!startText || !endText) return fallbackMessage;
 
   if (range.startDate === range.endDate) {
-    return `Wade is unavailable on ${startText}. What other day works?`;
+    return `The business is unavailable on ${startText}. What other day works?`;
   }
 
-  return `Wade is out ${startText} through ${endText}. What other day works?`;
+  return `The business is closed ${startText} through ${endText}. What other day works?`;
 }
 
 function buildTimeRangeBlockMessage(blockInfo, fallbackMessage) {
   const availableTimes = blockInfo?.availableTimes || [];
 
   if (availableTimes.length === 1) {
-    return `Wade is unavailable then. The next available time is ${formatAvailableTimesForSpeech(availableTimes)}. Does that work?`;
+    return `That time is not available. The next available time is ${formatAvailableTimesForSpeech(availableTimes)}. Does that work?`;
   }
 
   if (availableTimes.length > 1) {
-    return `Wade is unavailable then. The next three openings are ${formatAvailableTimesForSpeech(availableTimes)}. Which would you like?`;
+    return `That time is not available. The next three openings are ${formatAvailableTimesForSpeech(availableTimes)}. Which would you like?`;
   }
 
   const range = getGoogleCalendarEventTimeRange(blockInfo?.event);
 
   if (range) {
-    return `Wade is unavailable from ${range.startText} to ${range.endText} that day. Wade is fully booked for the rest of that day. What other day works for you?`;
+    return `That time is not available from ${range.startText} to ${range.endText} that day. The business is fully booked for the rest of that day. What other day works for you?`;
   }
 
-  return fallbackMessage || 'Wade is fully booked for the rest of that day. What other day works for you?';
+  return fallbackMessage || 'The business is fully booked for the rest of that day. What other day works for you?';
 }
 
 async function getGoogleCalendarFullDayBlock(collected) {
@@ -926,7 +926,7 @@ async function handleGoogleAvailabilityBlockIfNeeded(response) {
         currentState: 'collect_day',
         response: buildFullDayBlockMessage(
           fullDayBlock,
-          'Wade is unavailable that day. What other day works?'
+          'The business is unavailable that day. What other day works?'
         )
       };
     }
@@ -943,7 +943,7 @@ async function handleGoogleAvailabilityBlockIfNeeded(response) {
         currentState: 'reschedule_day',
         response: buildFullDayBlockMessage(
           fullDayBlock,
-          'Wade is unavailable that day. What other day would you like to move it to?'
+          'The business is unavailable that day. What other day would you like to move it to?'
         ).replace('What other day works?', 'What other day would you like to move it to?')
       };
     }
@@ -967,7 +967,7 @@ async function handleGoogleAvailabilityBlockIfNeeded(response) {
     currentState: targetState,
     response: buildTimeRangeBlockMessage(
       slotBlock,
-      'Wade is unavailable at that time. What other time works?'
+      'That time is not available. What other time works?'
     )
   };
 }
